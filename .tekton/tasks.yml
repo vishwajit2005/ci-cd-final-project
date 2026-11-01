@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ci-cd-pipeline
+spec:
+  params:
+    - name: repo-url
+      type: string
+  tasks:
+    - name: cleanup
+      taskRef:
+        kind: Task
+        name: cleanup
+    - name: git-clone
+      taskRef:
+        kind: Task
+        name: git-clone
+      runAfter: [cleanup]
+      params:
+        - name: url
+          value: "$(params.repo-url)"
+    - name: flake8
+      taskRef:
+        kind: Task
+        name: flake8
+      runAfter: [git-clone]
+    - name: nose
+      taskRef:
+        kind: Task
+        name: nose
+      runAfter: [flake8]
+    - name: buildah
+      taskRef:
+        kind: Task
+        name: buildah
+      runAfter: [nose]
+    - name: deploy
+      taskRef:
+        kind: Task
+        name: openshift-client
+      runAfter: [buildah]
